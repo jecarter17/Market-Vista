@@ -21,7 +21,7 @@ export class Home extends React.Component{
     render(){
         return(
             <div>
-                <p>Welcome to the Home page</p>
+                <p>Welcome to the Home page {this.props.name}</p>
                 <img src={logo} className="App-logo" alt="logo" />
                 <p>{this.state.apiResponse}</p>
             </div>

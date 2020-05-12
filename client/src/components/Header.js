@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router";
 import { render } from "react-dom";
 
 export class Header extends React.Component{
