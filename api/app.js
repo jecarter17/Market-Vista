@@ -1,5 +1,6 @@
 var createError = require('http-errors');
 var express = require('express');
+var request = require("request");
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
@@ -25,6 +26,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use("/testAPI", testAPIRouter);
+
+app.get("/getStockData", (req, res) => {
+  request(
+    "https://api.worldtradingdata.com/api/v1/stock?symbol=SNAP&api_token=pHr6rXvzaxwgriEmMtTuQkEjQc8NTNQaofaDu8OZBLQKy9wUJjgYgR9H2rxz",
+    function(error, response, body){
+      if(!error && response.statusCode == 200){
+        res.send(body);
+      }
+    }
+  )
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

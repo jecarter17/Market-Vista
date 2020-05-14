@@ -8,7 +8,7 @@ export class Home extends React.Component{
         super(props);
         this.state = {
             apiResponse:"",
-            count: props.initialCount
+            count: props.user.id
         };
     }
 
@@ -37,7 +37,7 @@ export class Home extends React.Component{
     render(){
         return(
             <div>
-                <p>Welcome to the Home page {this.props.name}</p>
+                <p>Welcome to the Home page {this.props.user.name}</p>
                 <img src={logo} className="App-logo" alt="logo" />
                 <p>{this.state.apiResponse}</p>
                 <p>Count = {this.state.count}</p>
@@ -49,6 +49,5 @@ export class Home extends React.Component{
 }
 
 Home.propTypes = {
-    name: PropTypes.string,
-    initialCount: PropTypes.number
+    user: PropTypes.object
 };

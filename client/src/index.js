@@ -1,15 +1,27 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import './css/index.css';
-import App from './components/App';
-import * as serviceWorker from './app/serviceWorker';
+import {render} from "react-dom";
+import {BrowserRouter} from "react-router-dom";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+import Root  from './components/Root';
+
+import * as serviceWorker from './app/serviceWorker';
+import './css/index.css';
+
+class App extends React.Component{
+  render(){
+    var defaultUser = {
+      "name": "Guest",
+      "id": 0
+    };
+    return(
+      <BrowserRouter>
+        <Root user={defaultUser}/>
+      </BrowserRouter>      
+    );
+  }
+}
+
+render(<App />, window.document.getElementById('app'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
