@@ -33,7 +33,6 @@ class Root extends React.Component{
               <Route path="/settings" component={Settings}/>
               <Route path="/login" component={Login}/>
             </Switch>
-            <Home user={this.props.user}/>
           </div>
         </div>
       </div>

@@ -8,7 +8,8 @@ export class Home extends React.Component{
         super(props);
         this.state = {
             apiResponse:"",
-            count: props.user.id
+            stockPrice: "",
+            count: 0
         };
     }
 
@@ -22,6 +23,13 @@ export class Home extends React.Component{
         this.setState({
             count: this.state.count - 1
         });
+    }
+
+    fetchStockPrice(){
+        fetch("/getStockQuote")
+            .then(res => res.text())
+            .then(res => this.setState({stockPrice: res}))
+        //var refresh = setTimeout(this.fetchStockPrice.bind(this), 15000);
     }
     
     callAPI(){
@@ -37,9 +45,10 @@ export class Home extends React.Component{
     render(){
         return(
             <div>
-                <p>Welcome to the Home page {this.props.user.name}</p>
+                <p>Welcome to the Home page Guest</p>
                 <img src={logo} className="App-logo" alt="logo" />
-                <p>{this.state.apiResponse}</p>
+                <p>IBM's stock price is {this.state.stockPrice}</p>
+                <button onClick={() => this.fetchStockPrice()} className="btn btn-primary">Get IBM Stock Price</button>
                 <p>Count = {this.state.count}</p>
                 <button onClick={() => this.countUp()} className="btn btn-primary">Count Up</button>
                 <button onClick={() => this.countDown()} className="btn btn-primary">Count Down</button>

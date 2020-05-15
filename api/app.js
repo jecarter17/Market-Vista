@@ -23,16 +23,30 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const MongoClient = require('mongodb').MongoClient;
+const uri = "mongodb+srv://JC:Echols14@market-vista-db-jvnpz.mongodb.net/test?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true });
+client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  client.close();
+});
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use("/testAPI", testAPIRouter);
 
-app.get("/getStockData", (req, res) => {
+const av_token = "VHUF69V04PDDFMM9";
+
+app.get("/getStockQuote", (req, res) => {
   request(
-    "https://api.worldtradingdata.com/api/v1/stock?symbol=SNAP&api_token=pHr6rXvzaxwgriEmMtTuQkEjQc8NTNQaofaDu8OZBLQKy9wUJjgYgR9H2rxz",
+    "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=IBM&apikey="+av_token,
     function(error, response, body){
       if(!error && response.statusCode == 200){
-        res.send(body);
+        var parsedBody = JSON.parse(body);
+        var curPrice = parsedBody['Global Quote']['05. price']
+        console.log(curPrice);
+        res.send(curPrice);
       }
     }
   )
