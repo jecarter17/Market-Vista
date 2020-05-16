@@ -25,12 +25,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://JC:Echols14@market-vista-db-jvnpz.mongodb.net/test?retryWrites=true&w=majority";
-const client = new MongoClient(uri, { useNewUrlParser: true });
-client.connect(err => {
-  const collection = client.db("test").collection("devices");
-  // perform actions on the collection object
-  client.close();
-});
+const mongo_client = new MongoClient(uri, { useNewUrlParser: true });
+
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -50,6 +46,30 @@ app.get("/getStockQuote", (req, res) => {
       }
     }
   )
+});
+
+app.get("/getUser", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db("sample_airbnb").collection("listingsAndReviews");
+    // perform actions on the collection object
+    collection.find({_id: "10006546"}).toArray(function(err, result){
+      if (err) throw err;
+      console.log(result);
+      res.send(result);
+    });
+  });
+});
+
+app.get("/saveUser", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db("sample_airbnb").collection("listingsAndReviews");
+    // perform actions on the collection object
+    collection.find({_id: "10006546"}).toArray(function(err, result){
+      if (err) throw err;
+      console.log(result);
+      res.send(result);
+    });
+  });
 });
 
 // catch 404 and forward to error handler
