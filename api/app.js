@@ -25,7 +25,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://JC:Echols14@market-vista-db-jvnpz.mongodb.net/test?retryWrites=true&w=majority";
-const mongo_client = new MongoClient(uri, { useNewUrlParser: true });
+const mongo_client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true});
+const user_db = "mv_users";
+const user_collection = "users";
 
 
 app.use('/', indexRouter);
@@ -60,15 +62,36 @@ app.get("/getUser", (req, res) => {
   });
 });
 
-app.get("/saveUser", (req, res) => {
+
+function getNextSequenceValue(sequenceName){
+  console.log("incrementing user_id...")
+  var sequenceDocument = mongo_client.db(user_db).collection(user_collection).findOneAndUpdate(
+     {_id: sequenceName },
+     {$inc:{sequence_value:1}},
+  );
+  console.log("incremented user user_id")
+  return sequenceDocument.sequence_value;
+}
+
+app.get("/saveTestUser", (req, res) => {
   mongo_client.connect(err => {
-    const collection = mongo_client.db("sample_airbnb").collection("listingsAndReviews");
+    const collection = mongo_client.db(user_db).collection(user_collection);
     // perform actions on the collection object
-    collection.find({_id: "10006546"}).toArray(function(err, result){
-      if (err) throw err;
-      console.log(result);
-      res.send(result);
+    if (err) throw err;
+    console.log("inserting new user...");
+    collection.insertOne({
+      _id: getNextSequenceValue("user_id"),
+      username: "test",
+      password: "test",
+      portflio: [{
+        symbol: "IBM",
+        shares: "4"
+      },{
+        symbol: "AMD",
+        shares: "10"
+      }]
     });
+    console.log("done inserting");
   });
 });
 
