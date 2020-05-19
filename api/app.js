@@ -64,13 +64,17 @@ app.get("/getUser", (req, res) => {
 
 
 function getNextSequenceValue(sequenceName){
-  console.log("incrementing user_id...")
-  var sequenceDocument = mongo_client.db(user_db).collection(user_collection).findOneAndUpdate(
-     {_id: sequenceName },
-     {$inc:{sequence_value:1}},
-  );
-  console.log("incremented user user_id")
-  return sequenceDocument.sequence_value;
+  console.log("updating sequence #...")
+  return mongo_client.db(user_db).collection(user_collection).findOneAndUpdate(
+    {_id: sequenceName },
+    {$inc:{sequence_value:1}},
+    {returnOriginal: false}
+  ).then(function(result){
+    console.log("done updating sequence #");
+    console.log(result);
+    console.log(result.value.sequence_value);
+    return result.value.sequence_value;
+  });
 }
 
 app.get("/saveTestUser", (req, res) => {
@@ -78,20 +82,47 @@ app.get("/saveTestUser", (req, res) => {
     const collection = mongo_client.db(user_db).collection(user_collection);
     // perform actions on the collection object
     if (err) throw err;
-    console.log("inserting new user...");
-    collection.insertOne({
-      _id: getNextSequenceValue("user_id"),
-      username: "test",
-      password: "test",
-      portflio: [{
-        symbol: "IBM",
-        shares: "4"
-      },{
-        symbol: "AMD",
-        shares: "10"
-      }]
-    });
-    console.log("done inserting");
+    console.log("saving new user...");
+    getNextSequenceValue("user_id").then(
+      id => {
+        console.log(id);
+        console.log("inserting new user...")
+        return collection.insertOne({
+          _id: id,
+          username: "user"+id,
+          password: "pass"+id,
+          portflio: [{
+            symbol: "IBM",
+            shares: "4"
+          },{
+            symbol: "AMD",
+            shares: "10"
+          }]
+        });
+      },
+      err => {throw err;}
+    ).then(
+      () => {
+        console.log("done inserting user");
+        console.log("querying for current users...");
+        return collection.find({}).toArray();
+      },
+      err => {throw err;}
+    ).then(
+      result => {
+        console.log("done querying for current users");
+        if (err) throw err;
+        console.log(result);
+        res.send(result);
+      },
+      err => {throw err;}
+    ).then(
+      () => {
+        console.log("done saving test user api call");
+      },
+      err => {throw err;}
+    );
+    console.log("back in base");
   });
 });
 
