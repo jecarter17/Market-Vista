@@ -21,7 +21,7 @@ export const Header = (props) => {
                     <li className="nav-item dropdown">
                         <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
                         <div className="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <h6 class="dropdown-header">{props.name}</h6>
+                            <h6 className="dropdown-header">{props.name}</h6>
                             <a className="dropdown-item" href="/profile">Profile</a>
                             <a className="dropdown-item" href="/portfolio">Portfolio</a>
                             <div className="dropdown-divider"></div>

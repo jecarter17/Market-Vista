@@ -38,7 +38,7 @@ export class Home extends React.Component{
         .then(res => this.setState({apiResponse: res}))
     }
     
-    componentWillMount(){
+    componentDidMount(){
         this.callAPI();
     }
 

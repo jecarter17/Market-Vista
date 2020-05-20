@@ -50,11 +50,12 @@ app.get("/getStockQuote", (req, res) => {
   )
 });
 
-app.get("/getUser", (req, res) => {
+app.post("/getUserData", (req, res) => {
   mongo_client.connect(err => {
-    const collection = mongo_client.db("sample_airbnb").collection("listingsAndReviews");
+    const collection = mongo_client.db(user_db).collection(user_collection);
     // perform actions on the collection object
-    collection.find({_id: "10006546"}).toArray(function(err, result){
+    console.log(req.body);
+    collection.find(req.body).toArray(function(err, result){
       if (err) throw err;
       console.log(result);
       res.send(result);
@@ -62,6 +63,21 @@ app.get("/getUser", (req, res) => {
   });
 });
 
+app.get("/testGetUser", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    // perform actions on the collection object
+    console.log(req);
+    console.log(req.body);
+    collection.find({username: "user1"}).toArray().then(
+      result => {
+        console.log(result);
+        res.send(result);
+      },
+      err => {throw err;}
+    );
+  });
+});
 
 function getNextSequenceValue(sequenceName){
   console.log("updating sequence #...")
@@ -71,8 +87,6 @@ function getNextSequenceValue(sequenceName){
     {returnOriginal: false}
   ).then(function(result){
     console.log("done updating sequence #");
-    console.log(result);
-    console.log(result.value.sequence_value);
     return result.value.sequence_value;
   });
 }
@@ -85,13 +99,12 @@ app.get("/saveTestUser", (req, res) => {
     console.log("saving new user...");
     getNextSequenceValue("user_id").then(
       id => {
-        console.log(id);
         console.log("inserting new user...")
         return collection.insertOne({
           _id: id,
           username: "user"+id,
           password: "pass"+id,
-          portflio: [{
+          portfolio: [{
             symbol: "IBM",
             shares: "4"
           },{
