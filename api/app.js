@@ -6,7 +6,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var helmet = require("helmet");
 //var session = require("express-session");
-var cors = require("cors")
+var cors = require("cors");
+var ObjectId = require('mongodb').ObjectId;
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -144,12 +145,12 @@ app.get("/saveTestUser", (req, res) => {
   });
 });
 
-function createNewSession(username){
+function createNewSession(uname){
   const collection = mongo_client.db(user_db).collection(session_collection);
-  var timestamp = Date.now();
+  var curr_ts = Date.now();
   return collection.insertOne({
-    username: {username},
-    timestamp: {timestamp},
+    username: uname,
+    timestamp: curr_ts,
     isDeleted: false
   });
 }
@@ -234,7 +235,7 @@ app.post("/validateToken", (req, res) => {
     const collection = mongo_client.db(user_db).collection(session_collection);
     
     console.log("validating session " + req.body.token);
-    collection.find({_id: req.body.token, isDeleted: false}).toArray().then(
+    collection.find({_id: new ObjectId(req.body.token), isDeleted: false}).toArray().then(
       findResult => {
         console.log(findResult);
         var returnObj;

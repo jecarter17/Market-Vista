@@ -23,7 +23,10 @@ class Root extends React.Component{
     }
   }
 
-  validateSessionToken(token){
+  validateSessionToken(){
+    //check if user is logged in (so we can adjust rendering)
+    console.log("validating token " + this.state.token);
+
     fetch("/validateToken", {
       method: "POST",
       headers: {
@@ -32,8 +35,36 @@ class Root extends React.Component{
       body: JSON.stringify({
         token: this.state.token
       })
-    });
-    return false;
+    }).then(
+      res => {
+        console.log(res);
+        return res.text();
+      },
+      err => {throw err;}
+    ).then(
+        result => {
+          console.log(result);
+          var parsedResult = JSON.parse(result);
+          this.setState({
+            username: parsedResult.username
+          });
+          if(parsedResult.success){
+            //save response username, return true
+            console.log(parsedResult.msg);
+            this.setState({
+              isLoggedIn: true,
+              loading: false
+            });
+          }else{
+            console.log(parsedResult.msg);
+            this.setState({
+              isLoggedIn: false,
+              loading: false
+            });
+          }                
+        },
+        err => {throw err;}
+    );
   }
 
   componentDidMount(){
@@ -42,24 +73,38 @@ class Root extends React.Component{
       loading: true
     });
 
-    //check if user is logged in (so we can adjust rendering)
-    if(this.validateSessionToken(this.state.token)){
+    //load token from previous store
+    var storedToken = localStorage.getItem("token");
+    console.log("Mounting... loading token " + storedToken);
+    if(storedToken != null){
+      console.log("setting token " + storedToken + " from store");
       this.setState({
-        isLoggedIn: true,
-        loading: false
-      });
-    }else{
-      this.setState({
-        isLoggedIn: false,
-        loading: false
-      });
-    }    
+        token: storedToken
+      },
+      this.validateSessionToken);
+    }
+    //window.addEventListener('beforeunload', this.componentCleanup);
+  }
+    
+
+  componentCleanup(){
+    //save token for next load
+    console.log(this.state);
+    console.log("Unmounting... storing token" + this.state.token);    
+    localStorage.setItem("token", this.state.token);
+  }
+
+  componentWillUnmount() {
+    //this.componentCleanup();
+    //window.removeEventListener('beforeunload', this.componentCleanup); // remove the event handler for normal unmounting
   }
 
   saveToken(newToken){
     this.setState({
       token: newToken
     });
+    console.log("local storing " + this.state.token)
+    localStorage.setItem("token", this.state.token);
   }
 
   handleLogout(){
@@ -102,7 +147,7 @@ class Root extends React.Component{
 
   render(){
     console.log("Loading =" + this.state.loading);
-    console.log("isLoggedOn =" + this.state.isLoggedIn);
+    console.log("isLoggedIn =" + this.state.isLoggedIn);
     console.log("token =" + this.state.token);
     console.log("username =" + this.state.username);
     if(this.state.loading){
@@ -124,8 +169,8 @@ class Root extends React.Component{
           <div className="row">
             <div className="col-xs-10 col-xs-offset-1">
               <Switch>
-                <Route exact path="/" component={Home}/>
-                <Route path="/home" component={Home}/>             
+                <Route exact path="/" component={() => <Home name={this.state.username} />}/>
+                <Route path="/home" component={() => <Home name={this.state.username} />}/>             
                 <Route path="/vista" component={Vista}/>
                 <Route path="/profile" component={Profile}/>
                 <Route path="/portfolio" component={Portfolio}/>

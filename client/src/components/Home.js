@@ -45,7 +45,7 @@ export class Home extends React.Component{
     render(){
         return(
             <div>
-                <p>Welcome to the Home page Guest</p>
+                <p>Welcome to the Home page {this.props.name}</p>
                 <img src={logo} className="App-logo" alt="logo" />
                 <p>IBM's stock price is {this.state.stockPrice}</p>
                 <button onClick={() => this.fetchStockPrice()} className="btn btn-primary">Get IBM Stock Price</button>
@@ -58,5 +58,5 @@ export class Home extends React.Component{
 }
 
 Home.propTypes = {
-    user: PropTypes.object
+    name: PropTypes.string
 };
