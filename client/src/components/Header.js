@@ -29,7 +29,10 @@ export const Header = (props) => {
                         </div>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="/login">Login</a>
+                        {props.isLoggedIn
+                            ? <button className="btn btn-outline-success my-2 my-sm-0" type="submit" onClick={props.handleLogout}>Log Out</button>
+                            : <a className="nav-link" href="/login">Login</a>
+                        }
                     </li>
                 </ul>
                 <form className="form-inline my-2 my-lg-0">
@@ -42,5 +45,7 @@ export const Header = (props) => {
 }
 
 Header.propTypes = {
-    name: PropTypes.string
+    name: PropTypes.string,
+    isLoggedIn: PropTypes.bool,
+    handleLogout: PropTypes.func
 };

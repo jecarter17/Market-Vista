@@ -4,6 +4,8 @@ var request = require("request");
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var helmet = require("helmet");
+//var session = require("express-session");
 var cors = require("cors")
 
 var indexRouter = require('./routes/index');
@@ -22,12 +24,15 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(helmet());
+//app.use(session({secret: "mySecret", cookie: {maxAge: 10000}}));
 
 const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://JC:Echols14@market-vista-db-jvnpz.mongodb.net/test?retryWrites=true&w=majority";
 const mongo_client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true});
 const user_db = "mv_users";
 const user_collection = "users";
+const session_collection = "user-sessions";
 
 
 app.use('/', indexRouter);
@@ -136,6 +141,127 @@ app.get("/saveTestUser", (req, res) => {
       err => {throw err;}
     );
     console.log("back in base");
+  });
+});
+
+function createNewSession(username){
+  const collection = mongo_client.db(user_db).collection(session_collection);
+  var timestamp = Date.now();
+  return collection.insertOne({
+    username: {username},
+    timestamp: {timestamp},
+    isDeleted: false
+  });
+}
+
+app.post("/login", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    // perform actions on the collection object
+    console.log("parsing request body...");
+    console.log(req.body);
+    console.log(req.body.username);
+    console.log(req.body.password);
+    collection.find({username: req.body.username, password: req.body.password}).toArray().then(
+      findResult => {
+        console.log("parsing result...");
+        console.log(findResult);
+        var returnObj;
+        if(findResult.length != 1){
+          if(findResult.length == 0){
+            returnObj = {
+              username: "",
+              success: false,
+              msg: "There are no users matching the entered credentials. Please try again.",
+              token: -1
+            }
+          }else if(findResult.length != 1){
+            returnObj = {
+              username: "",
+              success: false,
+              msg: "Uh oh... There are multiple users matching the entered credentials. We messed up...",
+              token: -1
+            };
+          }
+          console.log(returnObj);
+          res.send(JSON.stringify(returnObj));
+        }else{
+          var uname = findResult[0].username;
+          //create new session and add token to response obj
+          createNewSession(uname).then(
+            insertResult => {
+              var session_token = insertResult.insertedId;
+              returnObj = {
+                username: uname,
+                success: true,
+                msg: "",
+                token: session_token
+              };
+              console.log(returnObj);
+              res.send(JSON.stringify(returnObj));
+            },
+            err => {throw err;}
+          );
+        }
+      },
+      err => {throw err;}
+    );
+  });
+});
+
+app.post("/logout", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(session_collection);
+    
+    console.log("marking session " + req.body.token + " as deleted...");
+    collection.findOneAndUpdate(
+      {_id: req.body.token },
+      {$set:{isDeleted: true}},
+      {returnOriginal: false}
+    ).then(
+      result => {
+        console.log("done marking");
+        console.log(result.value);
+        res.send(result.value.isDeleted);
+      },
+      err => {throw err;}
+    );
+  });
+});
+
+app.post("/validateToken", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(session_collection);
+    
+    console.log("validating session " + req.body.token);
+    collection.find({_id: req.body.token, isDeleted: false}).toArray().then(
+      findResult => {
+        console.log(findResult);
+        var returnObj;
+        if(findResult.length == 1){
+          returnObj = {
+            username: findResult[0].username,
+            success: true,
+            msg: "User is logged in"
+          }
+        }else if(findResult.length == 0){
+          returnObj = {
+            username: "",
+            success: false,
+            msg: "Invalid session token"
+          }
+        }else{
+          returnObj = {
+            username: "",
+            success: false,
+            msg: "More than one valid session, issue on our end..."
+          }
+        }
+        console.log(returnObj);
+        res.send(JSON.stringify(returnObj));
+      },
+      err => {throw err;}
+    );
   });
 });
 

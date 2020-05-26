@@ -1,7 +1,6 @@
 import React from "react";
-import { withRouter } from "react-router";
 
-class Profile extends React.Component{
+export class Profile extends React.Component{
 
     constructor(props){
         super(props);
@@ -64,5 +63,3 @@ class Profile extends React.Component{
         );
     }
 }
-
-export default withRouter(Profile);
