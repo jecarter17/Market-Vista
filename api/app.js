@@ -4,7 +4,7 @@ var request = require("request");
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var helmet = require("helmet");
+var bcrypt = require("bcrypt");
 //var session = require("express-session");
 var cors = require("cors");
 var ObjectId = require('mongodb').ObjectId;
@@ -25,8 +25,6 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(helmet());
-//app.use(session({secret: "mySecret", cookie: {maxAge: 10000}}));
 
 const MongoClient = require('mongodb').MongoClient;
 const uri = "mongodb+srv://JC:Echols14@market-vista-db-jvnpz.mongodb.net/test?retryWrites=true&w=majority";
@@ -35,12 +33,12 @@ const user_db = "mv_users";
 const user_collection = "users";
 const session_collection = "user-sessions";
 
+const av_token = "VHUF69V04PDDFMM9";
+const hashSalt = 10;
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use("/testAPI", testAPIRouter);
-
-const av_token = "VHUF69V04PDDFMM9";
 
 app.get("/getStockQuote", (req, res) => {
   request(
@@ -106,10 +104,12 @@ app.get("/saveTestUser", (req, res) => {
     getNextSequenceValue("user_id").then(
       id => {
         console.log("inserting new user...")
+        var testPassHash = bcrypt.hashSync("pass"+id, hashSalt);
+        console.log("pass"+id);
         return collection.insertOne({
           _id: id,
           username: "user"+id,
-          password: "pass"+id,
+          password: testPassHash,
           portfolio: [{
             symbol: "IBM",
             shares: "4"
@@ -161,9 +161,7 @@ app.post("/login", (req, res) => {
     // perform actions on the collection object
     console.log("parsing request body...");
     console.log(req.body);
-    console.log(req.body.username);
-    console.log(req.body.password);
-    collection.find({username: req.body.username, password: req.body.password}).toArray().then(
+    collection.find({username: req.body.username}).toArray().then(
       findResult => {
         console.log("parsing result...");
         console.log(findResult);
@@ -176,11 +174,11 @@ app.post("/login", (req, res) => {
               msg: "There are no users matching the entered credentials. Please try again.",
               token: -1
             }
-          }else if(findResult.length != 1){
+          }else{
             returnObj = {
               username: "",
               success: false,
-              msg: "Uh oh... There are multiple users matching the entered credentials. We messed up...",
+              msg: "Unsuccesful login",
               token: -1
             };
           }
@@ -188,21 +186,32 @@ app.post("/login", (req, res) => {
           res.send(JSON.stringify(returnObj));
         }else{
           var uname = findResult[0].username;
-          //create new session and add token to response obj
-          createNewSession(uname).then(
-            insertResult => {
-              var session_token = insertResult.insertedId;
-              returnObj = {
-                username: uname,
-                success: true,
-                msg: "",
-                token: session_token
-              };
-              console.log(returnObj);
-              res.send(JSON.stringify(returnObj));
-            },
-            err => {throw err;}
-          );
+          if(bcrypt.compareSync(req.body.password, findResult[0].password)){
+            //create new session and add token to response obj
+            createNewSession(uname).then(
+              insertResult => {
+                var session_token = insertResult.insertedId;
+                returnObj = {
+                  username: uname,
+                  success: true,
+                  msg: "",
+                  token: session_token
+                };
+                console.log(returnObj);
+                res.send(JSON.stringify(returnObj));
+              },
+              err => {throw err;}
+            );
+          }else{
+            returnObj = {
+              username: "",
+              success: false,
+              msg: "There are no users matching the entered credentials. Please try again.",
+              token: -1
+            };
+            console.log(returnObj);
+            res.send(returnObj);
+          }
         }
       },
       err => {throw err;}
@@ -216,7 +225,7 @@ app.post("/logout", (req, res) => {
     
     console.log("marking session " + req.body.token + " as deleted...");
     collection.findOneAndUpdate(
-      {_id: req.body.token },
+      {_id: new ObjectId(req.body.token) },
       {$set:{isDeleted: true}},
       {returnOriginal: false}
     ).then(
