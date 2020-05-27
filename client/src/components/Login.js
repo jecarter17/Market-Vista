@@ -1,5 +1,8 @@
 import React from "react";
 import PropTypes from "prop-types";
+import {useHistory} from "react-router-dom";
+
+import {Redirect} from "react-router-dom";
 
 import {InputField} from "./InputField";
 import {SubmitButton} from "./SubmitButton";
@@ -11,7 +14,8 @@ export class Login extends React.Component{
         this.state = {
             username: "",
             password: "",
-            buttonDisabled: false
+            buttonDisabled: false,
+            toHome: false
         }
     }
 
@@ -32,8 +36,25 @@ export class Login extends React.Component{
             buttonDisabled: false
         })
     }
+    /*
+    homeRedirect(){
+        console.log("home redirect called");
+        const history = useHistory();
+        history.push("/home");
+    }
 
-    doLogin(){
+    async handleLogin(){
+        var success = await this.doLogin();
+        console.log("login success = " + success);
+        if(success){
+            console.log("successful login, redirecting to home");
+            this.homeRedirect();
+        }else{
+            this.resetForm();
+        }
+    }*/
+
+    handleLogin(){
         if(!this.state.username){
             return;
         }
@@ -67,6 +88,9 @@ export class Login extends React.Component{
                 if(parsedResult.success){
                     console.log("saving token " + parsedResult.token);
                     this.props.saveToken(parsedResult.token);
+                    this.setState({
+                        toHome: true
+                    });
                 }else{
                     this.resetForm();
                     alert(parsedResult.msg);
@@ -77,6 +101,10 @@ export class Login extends React.Component{
     }
 
     render(){
+        if (this.state.toHome) {
+            return <Redirect to='/home' />
+        }
+
         return(
             <div className="loginForm">
                 <h1>Login</h1>
@@ -95,7 +123,7 @@ export class Login extends React.Component{
                 <SubmitButton
                     text={"Log In"}
                     disabled={this.state.buttonDisabled}
-                    onClick={ () => this.doLogin() }
+                    onClick={ () => this.handleLogin() }
                 />
             </div>
         );

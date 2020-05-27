@@ -126,20 +126,15 @@ class Root extends React.Component{
     ).then(
       res => {
         console.log(res);
-        var parsedResult = JSON.parse(res);
-        if(parsedResult.success){
-          this.setState({
-            isLoggedIn: true,
-            username: parsedResult.username
-          });
-          alert(parsedResult.msg);
+        if(res){
+          alert("Successfullly logged out");
         }else{
-          this.setState({
-            isLoggedIn: false,
-            username: parsedResult.username
-          });
-          alert(parsedResult.msg);
+          alert("Failed to properly log out");
         }
+        this.setState({
+          isLoggedIn: false,
+          username: ""
+        });
       },
       err => {throw err;}
     );
