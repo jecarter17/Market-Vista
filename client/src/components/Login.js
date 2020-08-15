@@ -1,6 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {useHistory} from "react-router-dom";
 
 import {Redirect} from "react-router-dom";
 
@@ -54,7 +53,11 @@ export class Login extends React.Component{
         }
     }*/
 
-    handleLogin(){
+    async doLogin(){
+        await this.handleLogin();
+    }
+
+    async handleLogin(){
         if(!this.state.username){
             return;
         }
@@ -62,48 +65,88 @@ export class Login extends React.Component{
             return;
         }
 
+        var redirect = false;
+
         this.setState({
             buttonDisabled: true
         });
 
-        fetch("/login", {
-            method: "POST",
-            headers: {
-              "Content-type": "application/json"
-            },
-            body: JSON.stringify({
-                username: this.state.username,
-                password: this.state.password
-            })
-        }).then(
-            res => {
-                console.log(res);
-                return res.text();
-            },
-            err => {throw err;}
-        ).then(
-            result => {
-                console.log(result);
-                var parsedResult = JSON.parse(result);
-                if(parsedResult.success){
-                    console.log("saving token " + parsedResult.token);
-                    this.props.saveToken(parsedResult.token);
-                    this.setState({
-                        toHome: true
-                    });
-                }else{
-                    this.resetForm();
-                    alert(parsedResult.msg);
-                }                
-            },
-            err => {throw err;}
-        );
+        try {            
+            redirect = await fetch("/login", {
+                method: "POST",
+                 headers: {
+                   "Content-type": "application/json"
+                 },
+                 body: JSON.stringify({
+                     username: this.state.username,
+                     password: this.state.password
+                 })
+             }).then(
+                 res => {
+                     console.log(res);
+                     return res.text();
+                 },
+                 err => {throw err;}
+             ).then(
+                 result => {
+                     console.log(result);
+                     var parsedResult = JSON.parse(result);
+                     if(parsedResult.success){
+                        /* trigger redirect on the next render */
+                        this.setState({
+                            toHome: true
+                        });
+                        console.log("Done setting state?");
+                         console.log("saving token " + parsedResult.token);
+                         this.props.saveToken(parsedResult.token);
+                         return true;
+                     }else{
+                         this.resetForm();
+                         alert(parsedResult.msg);
+                         return false;
+                     }                
+                 },
+                 err => {throw err;}
+             );
+        } catch (e) {
+            alert(e.message);
+        }
+
+        console.log("Exiting handle login...");
+
+        return;        
+    }
+
+    setStateSynchronous(stateUpdate) {
+        return new Promise(resolve => {
+            this.setState(stateUpdate, () => resolve());
+        });
+    }
+
+    componentWillUnmount(){
+        console.log("Component unmounting...");
+        console.log(this.state.toHome);
+    }
+
+    componentDidUpdate() {
+        console.log('updated component');  
+    }
+
+    redirect(){
+        return <Redirect
+            to={{
+                pathname: "/home",
+                state: { username: this.state.username }
+            }}
+        />
     }
 
     render(){
-        if (this.state.toHome) {
+        /*
+        if (this.state.toHome === true) {
             return <Redirect to='/home' />
-        }
+        }*/
+        console.log(this.state.toHome);
 
         return(
             <div className="loginForm">
@@ -123,8 +166,10 @@ export class Login extends React.Component{
                 <SubmitButton
                     text={"Log In"}
                     disabled={this.state.buttonDisabled}
-                    onClick={ () => this.handleLogin() }
+                    onClick={ () => this.doLogin() }
                 />
+                <a className="nav-link" href="/register">New here? Click here to create an account</a>
+                {this.state.toHome ? this.redirect() : <p></p>}
             </div>
         );
     }

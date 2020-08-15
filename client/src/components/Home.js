@@ -5,12 +5,17 @@ import PropTypes from "prop-types";
 export class Home extends React.Component{
 
     constructor(props){
-        super(props);
+        super(props);        
+        const username = (this.props.location.state && this.props.location.state.username) !== undefined
+                            ? this.props.location.state.username
+                            : this.props.username;
         this.state = {
             apiResponse:"",
             stockPrice: "",
-            count: 0
+            count: 0,
+            username: username
         };
+        console.log("Setting initial state from redirect: ", this.state.username);
     }
 
     countUp(){
@@ -45,7 +50,7 @@ export class Home extends React.Component{
     render(){
         return(
             <div>
-                <p>Welcome to the Home page {this.props.name}</p>
+                <p>Welcome to the Home page {this.state.username}</p>
                 <img src={logo} className="App-logo" alt="logo" />
                 <p>IBM's stock price is {this.state.stockPrice}</p>
                 <button onClick={() => this.fetchStockPrice()} className="btn btn-primary">Get IBM Stock Price</button>

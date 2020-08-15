@@ -1,5 +1,5 @@
 import React from 'react';
-import {Switch, Route} from "react-router-dom";
+import {Switch, Route, Redirect} from "react-router-dom";
 
 import {Header} from "./Header";
 import {Home} from "./Home";
@@ -19,13 +19,14 @@ class Root extends React.Component{
       token: -1,
       isLoggedIn: false,
       username: "",
-      loading: true
+      loading: true,
+      redirectToHome: false
     }
   }
 
-  validateSessionToken(){
+  validateSessionToken(token){
     //check if user is logged in (so we can adjust rendering)
-    console.log("validating token " + this.state.token);
+    console.log("validating token " + token);
 
     fetch("/validateToken", {
       method: "POST",
@@ -33,7 +34,7 @@ class Root extends React.Component{
         "Content-type": "application/json"
       },
       body: JSON.stringify({
-        token: this.state.token
+        token: token
       })
     }).then(
       res => {
@@ -53,13 +54,15 @@ class Root extends React.Component{
             console.log(parsedResult.msg);
             this.setState({
               isLoggedIn: true,
-              loading: false
+              loading: false,
+              redirectToHome: false
             });
           }else{
             console.log(parsedResult.msg);
             this.setState({
               isLoggedIn: false,
-              loading: false
+              loading: false,
+              redirectToHome: false
             });
           }                
         },
@@ -81,7 +84,7 @@ class Root extends React.Component{
       this.setState({
         token: storedToken
       },
-      this.validateSessionToken);
+      this.validateSessionToken(storedToken));
     }
     //window.addEventListener('beforeunload', this.componentCleanup);
   }
@@ -95,27 +98,25 @@ class Root extends React.Component{
   }
 
   componentWillUnmount() {
+    console.log("Root unmounting...");
     //this.componentCleanup();
     //window.removeEventListener('beforeunload', this.componentCleanup); // remove the event handler for normal unmounting
   }
 
   saveToken(newToken){
-    this.setState({
-      token: newToken
-    });
-    console.log("local storing " + this.state.token)
-    localStorage.setItem("token", this.state.token);
+    console.log("local storing " + newToken);
+    localStorage.setItem("token", newToken);
   }
 
-  handleLogout(){
+  async handleLogout(){
     //mark corresponding token as deleted
-    fetch("/logout", {
+    await fetch("/logout", {
       method: "POST",
       headers: {
         "Content-type": "application/json"
       },
       body: JSON.stringify({
-        token: this.state.token
+        token: localStorage.getItem("token")
       })
     }).then(
       res => {
@@ -133,11 +134,25 @@ class Root extends React.Component{
         }
         this.setState({
           isLoggedIn: false,
-          username: ""
+          username: "",
+          redirectToHome: true
         });
+        this.render();
       },
       err => {throw err;}
     );
+  }
+
+  redirect(){
+    /*this.setState({
+      redirectToHome: false
+    });*/
+    return <Redirect
+        to={{
+            pathname: "/home",
+            username: ""
+        }}
+    />
   }
 
   render(){
@@ -145,6 +160,12 @@ class Root extends React.Component{
     console.log("isLoggedIn =" + this.state.isLoggedIn);
     console.log("token =" + this.state.token);
     console.log("username =" + this.state.username);
+    console.log("redirectToHome =" + this.state.redirectToHome);
+
+    if (this.state.redirectToHome) {
+      this.validateSessionToken(this.state.token);
+    }
+
     if(this.state.loading){
       return(
         <div className="App">
@@ -153,7 +174,7 @@ class Root extends React.Component{
           </div>
         </div>
       );
-    }else{
+    } else {
       return (
         <div className="App">
           <div className="row">
@@ -164,8 +185,10 @@ class Root extends React.Component{
           <div className="row">
             <div className="col-xs-10 col-xs-offset-1">
               <Switch>
-                <Route exact path="/" component={() => <Home name={this.state.username} />}/>
-                <Route path="/home" component={() => <Home name={this.state.username} />}/>             
+                <Route exact path="/" component={() => <Home name={this.state.username}/>}/>
+                {/* <Route path="/home" component={() => <Home name={this.state.username} />}/> */}
+                {/*<Route path="/home" component={() => <Home name={this.state.username} location={this.props.location}/>}/>*/}
+                <Route path="/home" render={(props) => <Home {...props} name={this.state.username} />}/>
                 <Route path="/vista" component={Vista}/>
                 <Route path="/profile" component={Profile}/>
                 <Route path="/portfolio" component={Portfolio}/>
