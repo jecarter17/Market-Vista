@@ -1,8 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import {Redirect} from "react-router-dom";
-
 import {InputField} from "./InputField";
 import {SubmitButton} from "./SubmitButton";
 
@@ -35,23 +33,6 @@ export class Login extends React.Component{
             buttonDisabled: false
         })
     }
-    /*
-    homeRedirect(){
-        console.log("home redirect called");
-        const history = useHistory();
-        history.push("/home");
-    }
-
-    async handleLogin(){
-        var success = await this.doLogin();
-        console.log("login success = " + success);
-        if(success){
-            console.log("successful login, redirecting to home");
-            this.homeRedirect();
-        }else{
-            this.resetForm();
-        }
-    }*/
 
     async doLogin(){
         await this.handleLogin();
@@ -65,14 +46,12 @@ export class Login extends React.Component{
             return;
         }
 
-        var redirect = false;
-
         this.setState({
             buttonDisabled: true
         });
 
         try {            
-            redirect = await fetch("/login", {
+            await fetch("/login", {
                 method: "POST",
                  headers: {
                    "Content-type": "application/json"
@@ -91,15 +70,14 @@ export class Login extends React.Component{
                  result => {
                      console.log(result);
                      var parsedResult = JSON.parse(result);
+                     this.props.saveToken(parsedResult.token);
                      if(parsedResult.success){
                         /* trigger redirect on the next render */
+                        console.log("Setting toHome = true");
                         this.setState({
                             toHome: true
-                        });
-                        console.log("Done setting state?");
-                         console.log("saving token " + parsedResult.token);
-                         this.props.saveToken(parsedResult.token);
-                         return true;
+                        });                                                
+                        return true;
                      }else{
                          this.resetForm();
                          alert(parsedResult.msg);
@@ -129,23 +107,15 @@ export class Login extends React.Component{
     }
 
     componentDidUpdate() {
-        console.log('updated component');  
+        console.log('updated Login component');  
     }
 
     redirect(){
-        return <Redirect
-            to={{
-                pathname: "/home",
-                state: { username: this.state.username }
-            }}
-        />
+        console.log("returning Redirect");
+        return this.props.redirectToHome();
     }
 
     render(){
-        /*
-        if (this.state.toHome === true) {
-            return <Redirect to='/home' />
-        }*/
         console.log(this.state.toHome);
 
         return(
@@ -176,5 +146,6 @@ export class Login extends React.Component{
 }
 
 Login.propTypes = {
-    saveToken: PropTypes.func
+    saveToken: PropTypes.func,
+    redirectToHome: PropTypes.func
 };

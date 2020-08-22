@@ -5,17 +5,13 @@ import PropTypes from "prop-types";
 export class Home extends React.Component{
 
     constructor(props){
-        super(props);        
-        const username = (this.props.location.state && this.props.location.state.username) !== undefined
-                            ? this.props.location.state.username
-                            : this.props.username;
+        super(props);
         this.state = {
             apiResponse:"",
             stockPrice: "",
             count: 0,
-            username: username
+            username: this.props.username
         };
-        console.log("Setting initial state from redirect: ", this.state.username);
     }
 
     countUp(){

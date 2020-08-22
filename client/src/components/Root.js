@@ -16,7 +16,6 @@ class Root extends React.Component{
   constructor(){
     super();
     this.state = {
-      token: -1,
       isLoggedIn: false,
       username: "",
       loading: true,
@@ -24,50 +23,55 @@ class Root extends React.Component{
     }
   }
 
-  validateSessionToken(token){
+  validateSessionToken(){
+    console.log("validateSessionToken()");
     //check if user is logged in (so we can adjust rendering)
-    console.log("validating token " + token);
+    var storedToken = localStorage.getItem("token");
+    if(storedToken != null){
+      console.log("validating token " + storedToken + " from store");
 
-    fetch("/validateToken", {
-      method: "POST",
-      headers: {
-        "Content-type": "application/json"
-      },
-      body: JSON.stringify({
-        token: token
-      })
-    }).then(
-      res => {
-        console.log(res);
-        return res.text();
-      },
-      err => {throw err;}
-    ).then(
-        result => {
-          console.log(result);
-          var parsedResult = JSON.parse(result);
-          this.setState({
-            username: parsedResult.username
-          });
-          if(parsedResult.success){
-            //save response username, return true
-            console.log(parsedResult.msg);
-            this.setState({
-              isLoggedIn: true,
-              loading: false,
-              redirectToHome: false
-            });
-          }else{
-            console.log(parsedResult.msg);
-            this.setState({
-              isLoggedIn: false,
-              loading: false,
-              redirectToHome: false
-            });
-          }                
+      fetch("/validateToken", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+          token: storedToken
+        })
+      }).then(
+        res => {
+          console.log(res);
+          return res.text();
         },
         err => {throw err;}
-    );
+      ).then(
+          result => {
+            console.log(result);
+            var parsedResult = JSON.parse(result);
+            if(parsedResult.success){
+              //save response username, return true
+              console.log(parsedResult.msg);
+              this.setState({
+                isLoggedIn: true,
+                username: parsedResult.username,
+                loading: false,
+                redirectToHome: false
+              });
+            }else{
+              console.log(parsedResult.msg);
+              this.setState({
+                isLoggedIn: false,
+                username: "",
+                loading: false,
+                redirectToHome: false
+              });
+            }                
+          },
+          err => {throw err;}
+      );
+    } else {
+      console.log("no token to validate...");
+    }    
   }
 
   componentDidMount(){
@@ -75,29 +79,25 @@ class Root extends React.Component{
     this.setState({
       loading: true
     });
-
-    //load token from previous store
-    var storedToken = localStorage.getItem("token");
-    console.log("Mounting... loading token " + storedToken);
-    if(storedToken != null){
-      console.log("setting token " + storedToken + " from store");
-      this.setState({
-        token: storedToken
-      },
-      this.validateSessionToken(storedToken));
-    }
-    //window.addEventListener('beforeunload', this.componentCleanup);
+    this.validateSessionToken();
   }
-    
+
+  redirectToHome(){
+    console.log("redirectToHome()");
+    this.validateSessionToken();
+    return <Redirect
+      to={{
+        pathname: "/home"
+      }}
+    />
+  }    
 
   componentCleanup(){
-    //save token for next load
-    console.log(this.state);
-    console.log("Unmounting... storing token" + this.state.token);    
-    localStorage.setItem("token", this.state.token);
+    /* empty for now */
   }
 
   componentWillUnmount() {
+    /* I don't think this will ever execute */
     console.log("Root unmounting...");
     //this.componentCleanup();
     //window.removeEventListener('beforeunload', this.componentCleanup); // remove the event handler for normal unmounting
@@ -137,34 +137,16 @@ class Root extends React.Component{
           username: "",
           redirectToHome: true
         });
-        this.render();
       },
       err => {throw err;}
     );
   }
 
-  redirect(){
-    /*this.setState({
-      redirectToHome: false
-    });*/
-    return <Redirect
-        to={{
-            pathname: "/home",
-            username: ""
-        }}
-    />
-  }
-
   render(){
     console.log("Loading =" + this.state.loading);
     console.log("isLoggedIn =" + this.state.isLoggedIn);
-    console.log("token =" + this.state.token);
     console.log("username =" + this.state.username);
     console.log("redirectToHome =" + this.state.redirectToHome);
-
-    if (this.state.redirectToHome) {
-      this.validateSessionToken(this.state.token);
-    }
 
     if(this.state.loading){
       return(
@@ -174,6 +156,8 @@ class Root extends React.Component{
           </div>
         </div>
       );
+    } else if (this.state.redirectToHome) {
+      return this.redirectToHome();
     } else {
       return (
         <div className="App">
@@ -185,15 +169,13 @@ class Root extends React.Component{
           <div className="row">
             <div className="col-xs-10 col-xs-offset-1">
               <Switch>
-                <Route exact path="/" component={() => <Home name={this.state.username}/>}/>
-                {/* <Route path="/home" component={() => <Home name={this.state.username} />}/> */}
-                {/*<Route path="/home" component={() => <Home name={this.state.username} location={this.props.location}/>}/>*/}
-                <Route path="/home" render={(props) => <Home {...props} name={this.state.username} />}/>
+                <Route exact path="/" component={() => <Home username={this.state.username}/>}/>                
+                <Route path="/home" component={() => <Home username={this.state.username} />}/>
                 <Route path="/vista" component={Vista}/>
                 <Route path="/profile" component={Profile}/>
                 <Route path="/portfolio" component={Portfolio}/>
                 <Route path="/settings" component={Settings}/>
-                <Route path="/login" component={() => <Login saveToken={this.saveToken.bind(this)} />}/>
+                <Route path="/login" component={() => <Login saveToken={this.saveToken.bind(this)} redirectToHome={this.redirectToHome.bind(this)}/>}/>
               </Switch>
             </div>
           </div>
