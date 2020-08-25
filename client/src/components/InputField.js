@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 export class InputField extends React.Component{
 
@@ -15,4 +16,11 @@ export class InputField extends React.Component{
             </div>
         );
     }
+}
+
+InputField.propTypes = {
+    type: PropTypes.string,
+    placeholder: PropTypes.string,
+    value: PropTypes.string,
+    onChange: PropTypes.func
 }

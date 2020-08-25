@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 export class Profile extends React.Component{
 
@@ -12,7 +13,7 @@ export class Profile extends React.Component{
     }
 
     componentDidMount(){
-        this.fetchUserData("user1");
+        this.fetchUserData(this.props.username);
     }
 
     fetchUserData(u_name){
@@ -62,4 +63,8 @@ export class Profile extends React.Component{
             </div>
         );
     }
+}
+
+Profile.propTypes = {
+    username: PropTypes.string
 }

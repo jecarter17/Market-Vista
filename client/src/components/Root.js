@@ -172,8 +172,8 @@ class Root extends React.Component{
                 <Route exact path="/" component={() => <Home username={this.state.username}/>}/>                
                 <Route path="/home" component={() => <Home username={this.state.username} />}/>
                 <Route path="/vista" component={Vista}/>
-                <Route path="/profile" component={Profile}/>
-                <Route path="/portfolio" component={Portfolio}/>
+                <Route path="/profile" component={() => <Profile username={this.state.username}/>}/>
+                <Route path="/portfolio" component={() => <Portfolio username={this.state.username}/>}/>
                 <Route path="/settings" component={Settings}/>
                 <Route path="/login" component={() => <Login saveToken={this.saveToken.bind(this)} redirectToHome={this.redirectToHome.bind(this)}/>}/>
               </Switch>

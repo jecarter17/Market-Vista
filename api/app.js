@@ -112,10 +112,10 @@ app.get("/saveTestUser", (req, res) => {
           password: testPassHash,
           portfolio: [{
             symbol: "IBM",
-            shares: "4"
+            shares: 4
           },{
             symbol: "AMD",
-            shares: "10"
+            shares: 10
           }]
         });
       },
@@ -269,6 +269,69 @@ app.post("/validateToken", (req, res) => {
         }
         console.log(returnObj);
         res.send(JSON.stringify(returnObj));
+      },
+      err => {throw err;}
+    );
+  });
+});
+
+app.post("/getPortfolio", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("getting portfolio for user " + req.body.username);
+    
+    collection.find({username: req.body.username}).toArray().then(
+      result => {
+        var response;
+        if (result.length == 1) {
+          response = {
+            username: req.body.username,
+            success: true,
+            msg: "Portfolio found and returned",
+            portfolio: result[0].portfolio
+          }
+        } else if (res.length == 0) {
+          response = {
+            username: req.body.username,
+            success: false,
+            msg: "User not found, portfolio not returned",
+            portfolio: []
+          }
+        } else {
+          console.log("More than one user with username " + req.body.username + ", awkward...");
+          response = {
+            username: req.body.username,
+            success: false,
+            msg: "Duplicate users found, portfolio not returned",
+            portfolio: []
+          }
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+      },
+      err => {throw err;}
+    );
+  });
+});
+
+app.post("/modifyPortfolio", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("modifying portfolio for " + req.body.username + "\n \
+                  symbol: " + req.body.symbol + ", inc: " + req.body.inc);
+    collection.findOneAndUpdate(
+      {username: req.body.username, "portfolio.symbol": req.body.symbol},
+      {$inc:{"portfolio.$.shares": req.body.inc}},
+      {returnOriginal: false}
+    ).then(
+      result => {
+        var response = {
+          success: true,
+          portfolio: result.value.portfolio,
+          msg: "incremented " + req.body.symbol + " shares by " + req.body.inc
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
       },
       err => {throw err;}
     );
