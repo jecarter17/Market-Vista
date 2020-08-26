@@ -10,8 +10,8 @@ export class Position extends React.Component{
         this.state = {
             position: this.props.position,
             buttonsDisabled: false,
-            addInput: "",
-            reduceInput: ""
+            addInput: 0,
+            reduceInput: 0
         }
     }
 

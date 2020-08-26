@@ -33,6 +33,7 @@ export class Portfolio extends React.Component{
         if (currentShares) {
             console.log("Adding " + inc + " shares of " + symbol);
             await this.modifyPortfolio(symbol, inc);
+            window.location.reload(false);
         } else {
             // don't think this should ever get called
             alert("Could not find " + symbol + " in portfolio");
@@ -77,7 +78,6 @@ export class Portfolio extends React.Component{
                         portfolio: parsedResponse.portfolio
                     });
                 }
-                return;
             },
             err => {throw err;}
         )

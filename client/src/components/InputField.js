@@ -21,6 +21,6 @@ export class InputField extends React.Component{
 InputField.propTypes = {
     type: PropTypes.string,
     placeholder: PropTypes.string,
-    value: PropTypes.string,
+    /* value PropType not specified as it may be number or string */
     onChange: PropTypes.func
 }
