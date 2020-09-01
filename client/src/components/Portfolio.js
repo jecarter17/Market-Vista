@@ -18,37 +18,33 @@ export class Portfolio extends React.Component{
         this.getPortfolio();
     }
 
+    async reduceShares(symbol, inc){
+        var negated = inc * -1;
+        await this.addShares(symbol, negated);
+    }
+
     async addShares(symbol, inc){
+        if (inc == 0) {
+            alert("Please enter a nonzero value");
+            return;
+        }
         this.setState({
             disableButtons: true
         });
-        var currentShares;
-        for (var i=0; i<this.state.portfolio.length; i++) {
-            if (this.state.portfolio[i].symbol === symbol) {
-                currentShares = this.state.portfolio[i].shares;
-                break;
-            }
-        }
-
-        if (currentShares) {
-            console.log("Adding " + inc + " shares of " + symbol);
-            await this.modifyPortfolio(symbol, inc);
-            window.location.reload(false);
-        } else {
-            // don't think this should ever get called
-            alert("Could not find " + symbol + " in portfolio");
-        }
+        await this.modifyPortfolio(symbol, inc);
+        window.location.reload(false);
         this.setState({
             disableButtons: false
         });
     }
 
-    async reduceShares(symbol, inc){
-        var negated = inc * -1;
-        await this.modifyPortfolio(symbol, negated);
-    }
-
     async modifyPortfolio(symbol, inc){
+        if (inc < 0) {
+            console.log("Removing " + String(-1 * inc) + " shares of " + symbol);
+        } else {
+            console.log("Adding " + inc + " shares of " + symbol);
+        }
+
         var obj = {
             username: this.state.username,
             symbol: symbol,
@@ -77,6 +73,8 @@ export class Portfolio extends React.Component{
                     this.setState({
                         portfolio: parsedResponse.portfolio
                     });
+                } else {
+                    alert(parsedResponse.msg);
                 }
             },
             err => {throw err;}

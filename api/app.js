@@ -40,15 +40,31 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use("/testAPI", testAPIRouter);
 
-app.get("/getStockQuote", (req, res) => {
+app.post("/getStockQuote", (req, res) => {
   request(
-    "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=IBM&apikey="+av_token,
+    "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="+req.body.symbol+"&apikey="+av_token,
     function(error, response, body){
       if(!error && response.statusCode == 200){
         var parsedBody = JSON.parse(body);
         var curPrice = parsedBody['Global Quote']['05. price']
-        console.log(curPrice);
-        res.send(curPrice);
+        var responeObj;
+        if (curPrice) {
+          responeObj = {
+            success: true,
+            symbol: req.body.symbol,
+            price: curPrice,
+            msg: req.body.symbol + " quote successfully fetched"
+          }
+        } else {
+          responeObj = {
+            success: false,
+            symbol: req.body.symbol,
+            price: 0,
+            msg: "Failed to fetch " + req.body.symbol + " quote"
+          }
+        }        
+        console.log(responeObj);
+        res.send(JSON.stringify(responeObj));
       }
     }
   )
@@ -332,8 +348,18 @@ app.post("/modifyPortfolio", (req, res) => {
         }
         console.log(response);
         res.send(JSON.stringify(response));
-      },
-      err => {throw err;}
+      }
+    ).catch(
+      err => {
+        var response = {
+          success: false,
+          portfolio: [],
+          msg: "Failed to find or update portfolio"
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+        console.error(`Failed to find and update document: ${err}`)
+      }
     );
   });
 });

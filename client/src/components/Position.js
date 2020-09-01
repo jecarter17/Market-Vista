@@ -11,8 +11,46 @@ export class Position extends React.Component{
             position: this.props.position,
             buttonsDisabled: false,
             addInput: 0,
-            reduceInput: 0
+            reduceInput: 0,
+            price: 0
         }
+    }
+
+    componentDidMount(){
+        this.fetchStockPrice();
+
+    }
+
+    fetchStockPrice(){
+        var obj = {
+            symbol: this.state.position.symbol
+        }
+        var request = {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify(obj)
+        }
+        console.log(request);
+
+        fetch("/getStockQuote", request).then(
+            res => {
+                return res.text();
+            }
+        ).then(
+            res => {
+                console.log(res);
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.setState({price: parsedResponse.price});
+                } else {
+                    alert(parsedResponse.msg);
+                }                
+            }
+        ).catch(
+            err => {throw err;}
+        );
     }
 
     setInputValue(property, val){
@@ -41,7 +79,7 @@ export class Position extends React.Component{
             <div className="text-container">
                 <h4>Ticker: {this.state.position.symbol}</h4>
                 <p>Shares: {this.state.position.shares}</p>
-                <p>Market Value: $0</p>
+                <p>Market Value: ${this.state.price * this.state.position.shares}</p>
                 <SubmitButton 
                     text={"Add Shares"}
                     disabled={this.state.buttonsDisabled}
