@@ -1,0 +1,22 @@
+/* CSS */
+* {
+    margin: 0;
+    padding: 0;
+}
+div {
+    width: 100%;
+}
+div.container {
+    height: 100%;
+}
+.pos_container {
+    vertical-align: middle;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+div.add-pos-container {
+    vertical-align: middle;
+}
+li.list-container {
+    border-bottom: 5px solid black;
+}

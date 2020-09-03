@@ -2,6 +2,10 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import {Position} from "./Position";
+import {InputField} from "./InputField";
+import {SubmitButton} from "./SubmitButton";
+
+import styles from "../css/Portfolio.css";
 
 export class Portfolio extends React.Component{
 
@@ -10,12 +14,69 @@ export class Portfolio extends React.Component{
         this.state = {
             username: this.props.username,
             portfolio: [],
-            disableButtons: false
+            disableButtons: false,
+            tickerInput: ""
         }
     }
 
     componentDidMount(){
         this.getPortfolio();
+    }
+
+    symbolOwned(symbol){
+        for(var i = 0; i < this.state.portfolio.length; i++){
+            if (this.state.portfolio[i].shares === symbol) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async addPosition(symbol){
+        if (this.symbolOwned(symbol)) {
+            alert("You already added a position in " + symbol);
+            return;
+        }
+
+        var obj = {
+            username: this.state.username,
+            symbol: symbol
+        }
+        var request = {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify(obj)
+        }
+        console.log(request);
+
+        await fetch("/addPosition", request).then(
+            res => {
+                console.log(res);
+                return res.text();
+            }
+        ).then(
+            res => {
+                console.log(res);
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.setState({
+                        portfolio: parsedResponse.portfolio
+                    });
+                } else {
+                    alert(parsedResponse.msg);
+                }
+            }
+        ).catch(
+            err => {throw err;}
+        );
+
+        window.location.reload(false);
+    }
+
+    async removePosition(){
+
     }
 
     async reduceShares(symbol, inc){
@@ -24,7 +85,7 @@ export class Portfolio extends React.Component{
     }
 
     async addShares(symbol, inc){
-        if (inc == 0) {
+        if (inc === 0) {
             alert("Please enter a nonzero value");
             return;
         }
@@ -120,15 +181,29 @@ export class Portfolio extends React.Component{
         const list = this.state.portfolio.map((item, index) => {
             return (
                 <li className="list-container" key={index}>
-                    <Position
-                        position={item}
-                        addFunc={this.addShares.bind(this)}
-                        reduceFunc={this.reduceShares.bind(this)}
-                    />
+                    <div className="pos_container">
+                        <Position
+                            position={item}
+                            addFunc={this.addShares.bind(this)}
+                            reduceFunc={this.reduceShares.bind(this)}
+                            removePositionFunc={this.reduceShares.bind(this)}
+                        />
+                    </div>                    
                 </li>
             );
         });
         return list;
+    }
+
+    setInputValue(property, val){
+        val = val.trim();
+        if(val.length > 5){
+            return;
+        }
+
+        this.setState({
+            [property]: val
+        })
     }
 
     render(){
@@ -138,6 +213,19 @@ export class Portfolio extends React.Component{
                 <ul id="container" className="pf-list">
                     {this.displayPortfolio()}
                 </ul>
+                <div className="add-pos-container">
+                    <InputField
+                        type="text"
+                        placeholder="Ticker"
+                        value={this.state.tickerInput ? this.state.tickerInput : ""}
+                        onChange={(val) => this.setInputValue("tickerInput", val)}
+                    />
+                    <SubmitButton 
+                        text={"Add Position"}
+                        disabled={this.state.buttonsDisabled}
+                        onClick={() => this.addPosition(this.state.tickerInput)}
+                    />
+                </div>     
             </div>            
         );
     }

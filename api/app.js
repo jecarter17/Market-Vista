@@ -364,6 +364,45 @@ app.post("/modifyPortfolio", (req, res) => {
   });
 });
 
+app.post("/addPosition", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("opening position in " + req.body.symbol + " for " + req.body.username);
+    collection.findOneAndUpdate(
+      {username: req.body.username},
+      {
+        $push: {
+          portfolio: {
+            $each: [{symbol: req.body.symbol, shares: 1}]
+          }
+        }
+      },
+      {returnOriginal: false}
+    ).then(
+      result => {
+        var response = {
+          success: true,
+          portfolio: result.value.portfolio,
+          msg: "Added position of " + req.body.symbol + " for " + req.body.user
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+      }
+    ).catch(
+      err => {
+        var response = {
+          success: false,
+          portfolio: [],
+          msg: "Something went wrong, failed to add position..."
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+        console.error(`Failed to find and update document: ${err}`)
+      }
+    );
+  });
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

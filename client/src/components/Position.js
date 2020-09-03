@@ -18,7 +18,6 @@ export class Position extends React.Component{
 
     componentDidMount(){
         this.fetchStockPrice();
-
     }
 
     fetchStockPrice(){
@@ -102,6 +101,11 @@ export class Position extends React.Component{
                     value={this.state.reduceInput ? this.state.reduceInput : 0}
                     onChange={(val) => this.setInputValue("reduceInput", val)}
                 />
+                <SubmitButton 
+                    text={"Remove Position"}
+                    disabled={this.state.buttonsDisabled}
+                    onClick={() => this.props.removePositionFunc(this.state.tickerInput)}
+                />
             </div>
         )
     }
@@ -110,5 +114,6 @@ export class Position extends React.Component{
 Position.propTypes = {
     position: PropTyes.object,
     addFunc: PropTyes.func,
-    reduceFunc: PropTyes.func
+    reduceFunc: PropTyes.func,
+    removePositionFunc: PropTyes.func
 }
