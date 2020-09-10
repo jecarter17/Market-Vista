@@ -17,7 +17,8 @@ export class Position extends React.Component{
     }
 
     componentDidMount(){
-        this.fetchStockPrice();
+        //this.fetchStockPrice();
+        this.scrapeStockPrice(this.props.position.symbol);
     }
 
     fetchStockPrice(){
@@ -34,6 +35,41 @@ export class Position extends React.Component{
         console.log(request);
 
         fetch("/getStockQuote", request).then(
+            res => {
+                return res.text();
+            }
+        ).then(
+            res => {
+                console.log(res);
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.setState({price: parsedResponse.price});
+                } else {
+                    alert(parsedResponse.msg);
+                }                
+            }
+        ).catch(
+            err => {throw err;}
+        );
+    }
+
+    scrapeStockPrice(ticker){
+
+         // TODO: this is a lazy fix for an extra empty call of this function
+        // with an empty arg. Figure out root cause and fix that.
+        if (ticker == null) {
+            return;
+        }
+
+        var request = {
+            method: "GET",
+            headers: {
+                "Content-type": "application/json"
+            }
+        }
+        console.log(ticker);
+
+        fetch("/quotes/stock/"+ticker, request).then(
             res => {
                 return res.text();
             }

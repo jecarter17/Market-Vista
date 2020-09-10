@@ -36,6 +36,9 @@ export class Portfolio extends React.Component{
         if (this.symbolOwned(symbol)) {
             alert("You already added a position in " + symbol);
             return;
+        } else if (!symbol) {
+            alert("Please enter a non empty ticker");
+            return;
         }
 
         var obj = {
