@@ -366,6 +366,49 @@ app.post("/modifyPortfolio", (req, res) => {
   });
 });
 
+app.post("/sortPortfolio", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("sorting portfolio for " + req.body.username + "\n \
+                  key: " + req.body.key + ", ascending: " + req.body.ascending);
+    if (req.body.key === "shares"){
+      collection.updateOne(
+        {username: req.body.username},
+        {
+          $push: {
+            portfolio: {
+              $each: [],
+              $sort: { shares: req.body.ascending }
+            }
+          }
+        },
+        {returnOriginal: false}
+      ).then(
+        result => {
+          var response = {
+            success: true,
+            portfolio: result.value.portfolio,
+            msg: "sorted portfolio by shares by shares, asending: " + req.body.ascending
+          }
+          console.log(response);
+          res.send(JSON.stringify(response));
+        }
+      ).catch(
+        err => {
+          var response = {
+            success: false,
+            portfolio: [],
+            msg: "Failed to sort portfolio"
+          }
+          console.log(response);
+          res.send(JSON.stringify(response));
+          console.error(`Failed to sort document: ${err}`)
+        }
+      );
+    }
+  });
+});
+
 app.post("/addPosition", (req, res) => {
   mongo_client.connect(err => {
     const collection = mongo_client.db(user_db).collection(user_collection);
@@ -375,7 +418,7 @@ app.post("/addPosition", (req, res) => {
       {
         $push: {
           portfolio: {
-            $each: [{symbol: req.body.symbol, shares: 1}]
+            $each: [{symbol: req.body.symbol, shares: 0}]
           }
         }
       },
@@ -396,6 +439,45 @@ app.post("/addPosition", (req, res) => {
           success: false,
           portfolio: [],
           msg: "Something went wrong, failed to add position..."
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+        console.error(`Failed to find and update document: ${err}`)
+      }
+    );
+  });
+});
+
+app.post("/removePosition", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("removing position in " + req.body.symbol + " for " + req.body.username);
+    collection.findOneAndUpdate(
+      {username: req.body.username},
+      {
+        $pull: {
+          portfolio: {
+            symbol: req.body.symbol
+          }                     
+        }
+      },
+      {returnOriginal: false}
+    ).then(
+      result => {
+        var response = {
+          success: true,
+          portfolio: result.value.portfolio,
+          msg: "Removed position of " + req.body.symbol + " for " + req.body.user
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+      }
+    ).catch(
+      err => {
+        var response = {
+          success: false,
+          portfolio: [],
+          msg: "Something went wrong, failed to remove position..."
         }
         console.log(response);
         res.send(JSON.stringify(response));

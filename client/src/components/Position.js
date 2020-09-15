@@ -1,5 +1,11 @@
 import React from "react";
 import PropTyes from "prop-types";
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 import {SubmitButton} from "./SubmitButton";
 import {InputField} from "./InputField";
@@ -12,7 +18,8 @@ export class Position extends React.Component{
             buttonsDisabled: false,
             addInput: 0,
             reduceInput: 0,
-            price: 0
+            price: 0,
+            dialogOpen: false
         }
     }
 
@@ -109,12 +116,33 @@ export class Position extends React.Component{
         })
     }
 
+    getMarketPrice(){
+        if (this.state.price == 0) {
+            return "Loading...";
+        } else {
+            return "$" + (this.state.price * this.state.position.shares).toFixed(2).toString();
+        }
+    }
+
+    handleDialogOpen(){
+        this.setState({dialogOpen:true});
+    };
+
+    handleDialogCloseAgree(){
+        this.setState({dialogOpen:false});
+        this.props.removePositionFunc(this.state.position.symbol);
+    };
+
+    handleDialogCloseDisagree(){
+        this.setState({dialogOpen:false});
+    };
+
     render(){
         return(
             <div className="text-container">
                 <h4>Ticker: {this.state.position.symbol}</h4>
                 <p>Shares: {this.state.position.shares}</p>
-                <p>Market Value: ${this.state.price * this.state.position.shares}</p>
+                <p>Market Value: {this.getMarketPrice()}</p>
                 <SubmitButton 
                     text={"Add Shares"}
                     disabled={this.state.buttonsDisabled}
@@ -140,8 +168,29 @@ export class Position extends React.Component{
                 <SubmitButton 
                     text={"Remove Position"}
                     disabled={this.state.buttonsDisabled}
-                    onClick={() => this.props.removePositionFunc(this.state.tickerInput)}
+                    onClick={() => this.handleDialogOpen()}
                 />
+                <Dialog
+                    open={this.state.dialogOpen}
+                    onClose={this.handleDialogClose}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">{"Remove position?"}</DialogTitle>
+                    <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to remove your position in {this.state.position.symbol}?
+                    </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                    <Button onClick={() => this.handleDialogCloseDisagree()} color="primary">
+                        Disagree
+                    </Button>
+                    <Button onClick={() => this.handleDialogCloseAgree()} color="primary" autoFocus>
+                        Agree
+                    </Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         )
     }

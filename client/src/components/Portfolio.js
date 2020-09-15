@@ -78,8 +78,42 @@ export class Portfolio extends React.Component{
         window.location.reload(false);
     }
 
-    async removePosition(){
+    async removePosition(symbol){
+        var obj = {
+            username: this.state.username,
+            symbol: symbol
+        }
+        var request = {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify(obj)
+        }
+        console.log(request);
 
+        await fetch("/removePosition", request).then(
+            res => {
+                console.log(res);
+                return res.text();
+            }
+        ).then(
+            res => {
+                console.log(res);
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.setState({
+                        portfolio: parsedResponse.portfolio
+                    });
+                } else {
+                    alert(parsedResponse.msg);
+                }
+            }
+        ).catch(
+            err => {throw err;}
+        );
+
+        window.location.reload(false);
     }
 
     async reduceShares(symbol, inc){
@@ -180,6 +214,42 @@ export class Portfolio extends React.Component{
         )
     }
 
+    sortPortfolio(key, ascending){
+        var obj = {
+            username: this.state.username,
+            key: key,
+            ascending: ascending ? 1 : -1
+        }
+        var request = {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify(obj)
+        }
+        console.log(request);
+
+        fetch("/sortPortfolio", request).then(
+            res => {
+                console.log(res);
+                return res.text();
+            },
+            err => {throw err;}
+        ).then(
+            res => {
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.setState({
+                        portfolio: parsedResponse.portfolio
+                    });
+                } else {
+                    alert(parsedResponse.msg);
+                }
+            },
+            err => {throw err;}
+        )
+    }
+
     displayPortfolio(){
         const list = this.state.portfolio.map((item, index) => {
             return (
@@ -189,7 +259,7 @@ export class Portfolio extends React.Component{
                             position={item}
                             addFunc={this.addShares.bind(this)}
                             reduceFunc={this.reduceShares.bind(this)}
-                            removePositionFunc={this.reduceShares.bind(this)}
+                            removePositionFunc={this.removePosition.bind(this)}
                         />
                     </div>                    
                 </li>
@@ -228,7 +298,19 @@ export class Portfolio extends React.Component{
                         disabled={this.state.buttonsDisabled}
                         onClick={() => this.addPosition(this.state.tickerInput)}
                     />
-                </div>     
+                </div>
+                <div className="add-pos-container">
+                    <SubmitButton 
+                        text={"Sort Ascending Shares"}
+                        disabled={this.state.buttonsDisabled}
+                        onClick={() => this.sortPortfolio("shares", 1)}
+                    />
+                    <SubmitButton 
+                        text={"Sort Descending Shares"}
+                        disabled={this.state.buttonsDisabled}
+                        onClick={() => this.sortPortfolio("shares", -1)}
+                    />
+                </div>
             </div>            
         );
     }
