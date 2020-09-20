@@ -23,6 +23,16 @@ export class Position extends React.Component{
         }
     }
 
+    componentDidUpdate(prevProps){
+        if (this.props.position.symbol !== prevProps.position.symbol) {
+            this.scrapeStockPrice(this.props.position.symbol);
+        }
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        return {position: nextProps.position};
+    }
+
     componentDidMount(){
         //this.fetchStockPrice();
         this.scrapeStockPrice(this.props.position.symbol);
@@ -61,7 +71,8 @@ export class Position extends React.Component{
     }
 
     scrapeStockPrice(ticker){
-
+        this.setState({price: 0});
+        
          // TODO: this is a lazy fix for an extra empty call of this function
         // with an empty arg. Figure out root cause and fix that.
         if (ticker == null) {
@@ -124,6 +135,17 @@ export class Position extends React.Component{
         }
     }
 
+    /* prop function wrappers*/
+    addFunc(){
+        this.setState({addInput: 0});
+        this.props.addFunc(this.state.position.symbol, this.state.addInput);
+    }
+
+    reduceFunc(){
+        this.setState({reduceInput: 0});
+        this.props.reduceFunc(this.state.position.symbol, this.state.reduceInput);
+    }
+
     handleDialogOpen(){
         this.setState({dialogOpen:true});
     };
@@ -140,13 +162,13 @@ export class Position extends React.Component{
     render(){
         return(
             <div className="text-container">
-                <h4>Ticker: {this.state.position.symbol}</h4>
+                <h4>{this.state.position.symbol}</h4>
                 <p>Shares: {this.state.position.shares}</p>
                 <p>Market Value: {this.getMarketPrice()}</p>
                 <SubmitButton 
                     text={"Add Shares"}
                     disabled={this.state.buttonsDisabled}
-                    onClick={() => this.props.addFunc(this.state.position.symbol, this.state.addInput)}
+                    onClick={() => this.addFunc()}
                 />
                 <InputField
                     type="number"
@@ -157,7 +179,7 @@ export class Position extends React.Component{
                 <SubmitButton 
                     text={"Reduce Shares"}
                     disabled={this.state.buttonsDisabled}
-                    onClick={() => this.props.reduceFunc(this.state.position.symbol, this.state.reduceInput)}
+                    onClick={() => this.reduceFunc()}
                 />
                 <InputField
                     type="number"

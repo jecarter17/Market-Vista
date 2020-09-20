@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import Chart from "chart.js";
 
 import {Position} from "./Position";
 import {InputField} from "./InputField";
@@ -15,8 +16,14 @@ export class Portfolio extends React.Component{
             username: this.props.username,
             portfolio: [],
             disableButtons: false,
-            tickerInput: ""
+            tickerInput: "",
+            sort: {
+                key: "",
+                ascending: true
+            },
+            prices: []
         }
+        this.chartRef = React.createRef();
     }
 
     componentDidMount(){
@@ -74,8 +81,6 @@ export class Portfolio extends React.Component{
         ).catch(
             err => {throw err;}
         );
-
-        window.location.reload(false);
     }
 
     async removePosition(symbol){
@@ -112,8 +117,6 @@ export class Portfolio extends React.Component{
         ).catch(
             err => {throw err;}
         );
-
-        window.location.reload(false);
     }
 
     async reduceShares(symbol, inc){
@@ -130,7 +133,6 @@ export class Portfolio extends React.Component{
             disableButtons: true
         });
         await this.modifyPortfolio(symbol, inc);
-        window.location.reload(false);
         this.setState({
             disableButtons: false
         });
@@ -205,7 +207,7 @@ export class Portfolio extends React.Component{
                 if (parsedResponse.success) {
                     this.setState({
                         portfolio: parsedResponse.portfolio
-                    });
+                    }, () => this.makeDoughnutChart());
                 } else {
                     alert(parsedResponse.msg);
                 }
@@ -214,7 +216,11 @@ export class Portfolio extends React.Component{
         )
     }
 
-    sortPortfolio(key, ascending){
+    componentDidUpdate(){
+        console.log("component updated...");
+    }
+
+    async sortPortfolio(key, ascending){
         var obj = {
             username: this.state.username,
             key: key,
@@ -228,8 +234,10 @@ export class Portfolio extends React.Component{
             body: JSON.stringify(obj)
         }
         console.log(request);
-
-        fetch("/sortPortfolio", request).then(
+        this.setState({
+            disableButtons: true
+        });
+        await fetch("/sortPortfolio", request).then(
             res => {
                 console.log(res);
                 return res.text();
@@ -240,18 +248,28 @@ export class Portfolio extends React.Component{
                 var parsedResponse = JSON.parse(res);
                 if (parsedResponse.success) {
                     this.setState({
-                        portfolio: parsedResponse.portfolio
-                    });
+                        portfolio: parsedResponse.portfolio,
+                        sort: {
+                            key: parsedResponse.sortKey,
+                            ascending: parsedResponse.ascending == 1 ? true : false
+                        }
+                    }, () => console.log(this.state.sort));
                 } else {
                     alert(parsedResponse.msg);
                 }
             },
             err => {throw err;}
-        )
+        ).catch(
+            err => {
+                throw err; 
+            }
+        );
     }
 
     displayPortfolio(){
+        console.log("Displaying pf: " + JSON.stringify(this.state.portfolio));
         const list = this.state.portfolio.map((item, index) => {
+            {console.log("item " + toString(index)+ ": " + JSON.stringify(item))}
             return (
                 <li className="list-container" key={index}>
                     <div className="pos_container">
@@ -268,6 +286,46 @@ export class Portfolio extends React.Component{
         return list;
     }
 
+    makeDoughnutChart(){
+        var ctx = this.chartRef.current.getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [{
+                    label: '# of Votes',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    }
+
     setInputValue(property, val){
         val = val.trim();
         if(val.length > 5){
@@ -282,7 +340,27 @@ export class Portfolio extends React.Component{
     render(){
         return(
             <div>
-                <h1>Welcome to your portfolio page {this.props.username}</h1>
+                <h1>My Portfolio</h1>
+                <div className="container">
+                    <div className="row">
+                        <div className="col-sm"></div>
+                        <div className="col-sm">
+                            {this.state.portfolio.length} positions
+                        </div>
+                        <div className="col-sm">
+                            <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Sort</a>
+                            <div className="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <h6 className="dropdown-header">Sort by...</h6>
+                                <button className="dropdown-item" onClick={this.state.sort.key === "ticker" ? () => this.sortPortfolio("ticker", !this.state.sort.ascending) : () => this.sortPortfolio("ticker", true)}>
+                                    {this.state.sort.key === "ticker" ? <span style={{color: "blue"}}>Ticker {this.state.sort.ascending ?	"▲" : "▼"}</span> : "Ticker"}
+                                </button>
+                                <button className="dropdown-item" onClick={this.state.sort.key === "shares" ? () => this.sortPortfolio("shares", !this.state.sort.ascending) : () => this.sortPortfolio("shares", false)}>
+                                    {this.state.sort.key === "shares" ? <span style={{color: "blue"}}>Shares {this.state.sort.ascending ?	"▲" : "▼"}</span> : "Shares"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <ul id="container" className="pf-list">
                     {this.displayPortfolio()}
                 </ul>
@@ -299,18 +377,7 @@ export class Portfolio extends React.Component{
                         onClick={() => this.addPosition(this.state.tickerInput)}
                     />
                 </div>
-                <div className="add-pos-container">
-                    <SubmitButton 
-                        text={"Sort Ascending Shares"}
-                        disabled={this.state.buttonsDisabled}
-                        onClick={() => this.sortPortfolio("shares", 1)}
-                    />
-                    <SubmitButton 
-                        text={"Sort Descending Shares"}
-                        disabled={this.state.buttonsDisabled}
-                        onClick={() => this.sortPortfolio("shares", -1)}
-                    />
-                </div>
+                <canvas ref={this.chartRef} width="400" height="400"></canvas>               
             </div>            
         );
     }

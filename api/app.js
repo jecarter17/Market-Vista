@@ -371,41 +371,63 @@ app.post("/sortPortfolio", (req, res) => {
     const collection = mongo_client.db(user_db).collection(user_collection);
     console.log("sorting portfolio for " + req.body.username + "\n \
                   key: " + req.body.key + ", ascending: " + req.body.ascending);
-    if (req.body.key === "shares"){
-      collection.updateOne(
-        {username: req.body.username},
-        {
-          $push: {
-            portfolio: {
-              $each: [],
-              $sort: { shares: req.body.ascending }
-            }
-          }
-        },
-        {returnOriginal: false}
-      ).then(
-        result => {
-          var response = {
-            success: true,
-            portfolio: result.value.portfolio,
-            msg: "sorted portfolio by shares by shares, asending: " + req.body.ascending
-          }
-          console.log(response);
-          res.send(JSON.stringify(response));
-        }
-      ).catch(
-        err => {
-          var response = {
-            success: false,
-            portfolio: [],
-            msg: "Failed to sort portfolio"
-          }
-          console.log(response);
-          res.send(JSON.stringify(response));
-          console.error(`Failed to sort document: ${err}`)
-        }
-      );
+
+    var sortObj;
+    if (req.body.key === "shares") {
+      sortObj = { shares: req.body.ascending };
+    } else if (req.body.key === "ticker") {
+      sortObj = { symbol: req.body.ascending };
+    } else {
+      /* not a valid sort key */
+      var response = {
+        success: false,
+        portfolio: [],
+        sortKey: req.body.key,
+        ascending: req.body.ascending,
+        msg: req.body.key + " is not a valid sort key"
+      }
+      console.log(response);
+      res.send(JSON.stringify(response));
     }
+
+    collection.findOneAndUpdate(
+      {username: req.body.username},
+      {
+        $push: {
+          portfolio: {
+            $each: [],
+            $sort: sortObj
+          }
+        }
+      },
+      {returnOriginal: false}
+    ).then(
+      result => {
+        console.log(result);
+        var response = {
+          success: true,
+          portfolio: result.value.portfolio,
+          sortKey: req.body.key,
+          ascending: req.body.ascending,
+          msg: "sorted portfolio by shares by shares, asending: " + req.body.ascending
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+      }
+    ).catch(
+      err => {
+        var response = {
+          success: false,
+          portfolio: [],
+          sortKey: req.body.key,
+          ascending: req.body.ascending,
+          msg: "Failed to sort portfolio"
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+        console.error(`Failed to sort document: ${err}`);
+      }
+    );    
   });
 });
 
