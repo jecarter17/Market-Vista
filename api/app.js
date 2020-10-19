@@ -509,6 +509,42 @@ app.post("/removePosition", (req, res) => {
   });
 });
 
+app.post("/storePrice", (req, res) => {
+  mongo_client.connect(err => {
+    const collection = mongo_client.db(user_db).collection(user_collection);
+    console.log("modifying portfolio for " + req.body.username + "\n \
+                  symbol: " + req.body.symbol + ", price: " + req.body.price);
+    collection.findOneAndUpdate(
+      {username: req.body.username, "portfolio.symbol": req.body.symbol},
+      {$set:{"portfolio.$.price": req.body.price}},
+      {returnOriginal: false}
+    ).then(
+      result => {
+        var response = {
+          success: true,
+          symbol: req.body.symbol,
+          price: req.body.price,
+          msg: "stored new price for " + req.body.symbol + " (" + req.body.price + ")"
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+      }
+    ).catch(
+      err => {
+        var response = {
+          success: false,
+          symbol: req.body.symbol,
+          price: req.body.price,
+          msg: "/storePrice: Failed to find or update portfolio"
+        }
+        console.log(response);
+        res.send(JSON.stringify(response));
+        console.error(`Failed to find and update document: ${err}`)
+      }
+    );
+  });
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

@@ -1,5 +1,5 @@
 import React from "react";
-import PropTyes from "prop-types";
+import PropTypes from "prop-types";
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -14,6 +14,7 @@ export class Position extends React.Component{
     constructor(props){
         super(props);
         this.state = {
+            username: this.props.username,
             position: this.props.position,
             buttonsDisabled: false,
             addInput: 0,
@@ -30,11 +31,13 @@ export class Position extends React.Component{
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        return {position: nextProps.position};
+        return {
+            position: nextProps.position,
+            price: nextProps.position.price
+        };
     }
 
     componentDidMount(){
-        //this.fetchStockPrice();
         this.scrapeStockPrice(this.props.position.symbol);
     }
 
@@ -70,7 +73,7 @@ export class Position extends React.Component{
         );
     }
 
-    scrapeStockPrice(ticker){
+    async scrapeStockPrice(ticker){
         this.setState({price: 0});
         
          // TODO: this is a lazy fix for an extra empty call of this function
@@ -87,7 +90,41 @@ export class Position extends React.Component{
         }
         console.log(ticker);
 
-        fetch("/quotes/stock/"+ticker, request).then(
+        await fetch("/quotes/stock/"+ticker, request).then(
+            res => {
+                return res.text();
+            }
+        ).then(
+            res => {
+                console.log(res);
+                var parsedResponse = JSON.parse(res);
+                if (parsedResponse.success) {
+                    this.storePrice(parsedResponse.symbol, parsedResponse.price);
+                } else {
+                    alert(parsedResponse.msg);
+                }                
+            }
+        ).catch(
+            err => {throw err;}
+        );
+    }
+
+    async storePrice(symbol, price){
+        var obj = {
+            username: this.state.username,
+            symbol: symbol,
+            price: price
+        }
+        var request = {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify(obj)
+        }
+        console.log(request);
+
+        await fetch("/storePrice", request).then(
             res => {
                 return res.text();
             }
@@ -219,8 +256,9 @@ export class Position extends React.Component{
 }
 
 Position.propTypes = {
-    position: PropTyes.object,
-    addFunc: PropTyes.func,
-    reduceFunc: PropTyes.func,
-    removePositionFunc: PropTyes.func
+    username: PropTypes.string,
+    position: PropTypes.object,
+    addFunc: PropTypes.func,
+    reduceFunc: PropTypes.func,
+    removePositionFunc: PropTypes.func
 }
