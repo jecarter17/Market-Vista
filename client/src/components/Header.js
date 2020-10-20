@@ -15,8 +15,8 @@ export const Header = (props) => {
                     <li className="nav-item active">
                         <a className="nav-link" href="/home">Home</a>
                     </li>
-                    <li className="nav-item">
-                        <a className="nav-link disabled" href="/vista" tabIndex="-1" aria-disabled="true">My Vista</a>
+                    <li className="nav-item active">
+                        <a className="nav-link" href="/vista" tabIndex="-1">My Vista</a>
                     </li>
                     <li className="nav-item dropdown">
                         <a className="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
